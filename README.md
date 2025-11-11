@@ -133,7 +133,3 @@ All services, Redis, and RabbitMQ will start automatically.
 - Push notifications (Firebase FCM) - skeleton ready
 
 These services consume from RabbitMQ queues and are ready for external API integration.
-
-## License
-
-MIT
