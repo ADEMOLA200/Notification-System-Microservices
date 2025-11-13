@@ -1,0 +1,838 @@
+{
+	"info": {
+		"_postman_id": "team-member-3-services",
+		"name": "Team Member 3 - Email & Push Services",
+		"description": "Complete API collection for Email Service (3002) and Push Service (3003) with health checks, circuit breaker stats, and RabbitMQ testing examples.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "notification-delivery-services"
+	},
+	"item": [
+		{
+			"name": "Email Service (3002)",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Service is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.status).to.eql('healthy');",
+									"});",
+									"",
+									"pm.test(\"Database connected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.database).to.eql('connected');",
+									"});",
+									"",
+									"pm.test(\"Circuit breakers present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('circuitBreakers');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('templateService');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('emailProvider');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('rateLimiter');",
+									"});",
+									"",
+									"pm.test(\"Circuit breakers are CLOSED (healthy)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.circuitBreakers.templateService.state).to.be.oneOf(['CLOSED', 'HALF_OPEN']);",
+									"    pm.expect(jsonData.data.circuitBreakers.emailProvider.state).to.be.oneOf(['CLOSED', 'HALF_OPEN']);",
+									"});",
+									"",
+									"console.log('Email Service Health:', JSON.stringify(pm.response.json().data, null, 2));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{email_service_url}}/health",
+							"host": [
+								"{{email_service_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check Email Service health status including database connectivity and circuit breaker states."
+					},
+					"response": []
+				},
+				{
+					"name": "Service Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 (expected for root)\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Service responds with standard error format\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{email_service_url}}/",
+							"host": [
+								"{{email_service_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Root endpoint (expect 404 as email service is consumer-only)."
+					},
+					"response": []
+				}
+			],
+			"description": "Email Service endpoints for health monitoring and status checks."
+		},
+		{
+			"name": "Push Service (3003)",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Service is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData.data.status).to.eql('healthy');",
+									"});",
+									"",
+									"pm.test(\"Database connected\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.database).to.eql('connected');",
+									"});",
+									"",
+									"pm.test(\"Circuit breakers present\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('circuitBreakers');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('templateService');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('fcmProvider');",
+									"    pm.expect(jsonData.data.circuitBreakers).to.have.property('rateLimiter');",
+									"});",
+									"",
+									"pm.test(\"Circuit breakers are CLOSED (healthy)\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.circuitBreakers.templateService.state).to.be.oneOf(['CLOSED', 'HALF_OPEN']);",
+									"    pm.expect(jsonData.data.circuitBreakers.fcmProvider.state).to.be.oneOf(['CLOSED', 'HALF_OPEN']);",
+									"});",
+									"",
+									"console.log('Push Service Health:', JSON.stringify(pm.response.json().data, null, 2));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{push_service_url}}/health",
+							"host": [
+								"{{push_service_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check Push Service health status including database connectivity and circuit breaker states."
+					},
+					"response": []
+				},
+				{
+					"name": "Service Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404 (expected for root)\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Service responds with standard error format\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData).to.have.property('error');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{push_service_url}}/",
+							"host": [
+								"{{push_service_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Root endpoint (expect 404 as push service is consumer-only)."
+					},
+					"response": []
+				}
+			],
+			"description": "Push Service endpoints for health monitoring and status checks."
+		},
+		{
+			"name": "RabbitMQ Management",
+			"item": [
+				{
+					"name": "Publish Email Notification",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"properties\": {},\n    \"routing_key\": \"email\",\n    \"payload\": \"{\\\"user_id\\\":\\\"{{user_id}}\\\",\\\"template_code\\\":\\\"WELCOME_EMAIL\\\",\\\"variables\\\":{\\\"subject\\\":\\\"Welcome to Our Platform!\\\",\\\"name\\\":\\\"John Doe\\\",\\\"company\\\":\\\"Acme Corp\\\",\\\"verification_link\\\":\\\"https://example.com/verify?token=abc123\\\"},\\\"request_id\\\":\\\"req-{{$guid}}\\\",\\\"notification_id\\\":\\\"{{$guid}}\\\"}\",\n    \"payload_encoding\": \"string\"\n}"
+						},
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/exchanges/%2F/notifications.direct/publish",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"exchanges",
+								"%2F",
+								"notifications.direct",
+								"publish"
+							]
+						},
+						"description": "Publish an email notification message to RabbitMQ. This will be consumed by the Email Service.\n\n**IMPORTANT: You must create the notification record in the database FIRST!**\n\nUse the helper script instead:\n```bash\n./send-test-email.sh\n```\n\nOr manually create notification:\n```sql\nINSERT INTO notifications (id, user_id, notification_type, template_code, status, variables, request_id, created_at, updated_at)\nVALUES ('YOUR-UUID-HERE', '{{user_id}}', 'email', 'WELCOME_EMAIL', 'pending', '{\"subject\":\"Welcome!\",\"name\":\"John Doe\"}', 'YOUR-REQUEST-UUID', NOW(), NOW());\n```\n\n**Prerequisites:**\n1. User must exist in database with valid email\n2. Template must exist (WELCOME_EMAIL)\n3. Notification record created with matching notification_id\n4. Email service must be running\n5. SendGrid API key configured or SMTP configured\n\n**Message Fields:**\n- `user_id`: User UUID from database\n- `template_code`: Template to render\n- `variables`: Data for template (must include 'subject')\n- `request_id`: Correlation ID for tracking\n- `notification_id`: Notification UUID from database"
+					},
+					"response": []
+				},
+				{
+					"name": "Publish Push Notification",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"properties\": {},\n    \"routing_key\": \"push\",\n    \"payload\": \"{\\\"user_id\\\":\\\"{{user_id}}\\\",\\\"template_code\\\":\\\"WELCOME_EMAIL\\\",\\\"variables\\\":{\\\"title\\\":\\\"Welcome!\\\",\\\"body\\\":\\\"Welcome to our platform\\\",\\\"name\\\":\\\"John Doe\\\",\\\"company\\\":\\\"Acme Corp\\\",\\\"verification_link\\\":\\\"https://example.com\\\"},\\\"request_id\\\":\\\"{{$guid}}\\\",\\\"notification_id\\\":\\\"{{$guid}}\\\"}\",\n    \"payload_encoding\": \"string\"\n}"
+						},
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/exchanges/%2F/notifications.direct/publish",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"exchanges",
+								"%2F",
+								"notifications.direct",
+								"publish"
+							]
+						},
+						"description": "Publish a push notification message to RabbitMQ. This will be consumed by the Push Service.\n\n**IMPORTANT: You must create the notification record in the database FIRST!**\n\nUse the helper script instead:\n```bash\n./send-test-push.sh\n```\n\nOr manually create notification:\n```sql\nINSERT INTO notifications (id, user_id, notification_type, template_code, status, variables, request_id, created_at, updated_at)\nVALUES ('YOUR-UUID-HERE', '{{user_id}}', 'push', 'WELCOME_EMAIL', 'pending', '{\"title\":\"Welcome!\",\"body\":\"Welcome to our platform\"}', 'YOUR-REQUEST-UUID', NOW(), NOW());\n```\n\n**Prerequisites:**\n1. User must exist in database with valid push_token\n2. Template must exist (WELCOME_EMAIL)\n3. Notification record created with matching notification_id\n4. Push service must be running\n5. FCM server key must be configured\n\n**Variables:**\n- `title`: Notification title\n- `body`: Notification body\n- `name`, `company`, `verification_link`: Template variables"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Email Queue Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Queue info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('messages');",
+									"    pm.expect(jsonData).to.have.property('consumers');",
+									"});",
+									"",
+									"console.log('Email Queue Status:');",
+									"console.log('  Messages:', pm.response.json().messages);",
+									"console.log('  Consumers:', pm.response.json().consumers);",
+									"console.log('  State:', pm.response.json().state);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/queues/%2F/email.queue",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"queues",
+								"%2F",
+								"email.queue"
+							]
+						},
+						"description": "Get email queue statistics including message count and consumer count."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Push Queue Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Queue info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('messages');",
+									"    pm.expect(jsonData).to.have.property('consumers');",
+									"});",
+									"",
+									"console.log('Push Queue Status:');",
+									"console.log('  Messages:', pm.response.json().messages);",
+									"console.log('  Consumers:', pm.response.json().consumers);",
+									"console.log('  State:', pm.response.json().state);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/queues/%2F/push.queue",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"queues",
+								"%2F",
+								"push.queue"
+							]
+						},
+						"description": "Get push queue statistics including message count and consumer count."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Failed Queue (DLQ) Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"DLQ info returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('messages');",
+									"});",
+									"",
+									"var failedCount = pm.response.json().messages;",
+									"if (failedCount > 0) {",
+									"    console.warn('⚠️ Dead Letter Queue has ' + failedCount + ' failed messages!');",
+									"} else {",
+									"    console.log('✅ No failed messages in DLQ');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/queues/%2F/failed.queue",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"queues",
+								"%2F",
+								"failed.queue"
+							]
+						},
+						"description": "Check Dead Letter Queue (DLQ) for permanently failed notifications."
+					},
+					"response": []
+				},
+				{
+					"name": "List All Queues",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Queues array returned\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"var queues = pm.response.json();",
+									"console.log('Total Queues:', queues.length);",
+									"queues.forEach(function(queue) {",
+									"    console.log('  -', queue.name, ':', queue.messages, 'messages,', queue.consumers, 'consumers');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/queues",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"queues"
+							]
+						},
+						"description": "List all RabbitMQ queues with statistics."
+					},
+					"response": []
+				}
+			],
+			"description": "RabbitMQ Management API endpoints for publishing messages and monitoring queues."
+		},
+		{
+			"name": "Integration Testing",
+			"item": [
+				{
+					"name": "Complete Email Flow Test",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// This test requires:",
+									"// 1. User created via User Service",
+									"// 2. Template created via Template Service",
+									"// 3. Email/Push services running",
+									"console.log('Testing complete email notification flow...');",
+									"console.log('User ID:', pm.environment.get('user_id'));",
+									"console.log('Template:', pm.environment.get('template_code'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"properties\": {},\n    \"routing_key\": \"email.queue\",\n    \"payload\": \"{\\\"user_id\\\":\\\"{{user_id}}\\\",\\\"template_code\\\":\\\"{{template_code}}\\\",\\\"variables\\\":{\\\"subject\\\":\\\"Test Email from Postman\\\",\\\"name\\\":\\\"Test User\\\",\\\"company\\\":\\\"Test Company\\\",\\\"verification_link\\\":\\\"https://example.com/verify\\\"},\\\"request_id\\\":\\\"req-postman-{{$timestamp}}\\\",\\\"notification_id\\\":\\\"notif-postman-{{$timestamp}}\\\"}\",\n    \"payload_encoding\": \"string\"\n}"
+						},
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/exchanges/%2F/notifications.direct/publish",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"exchanges",
+								"%2F",
+								"notifications.direct",
+								"publish"
+							]
+						},
+						"description": "End-to-end test: Publish email notification and verify it's processed.\n\n**Steps:**\n1. Run this request\n2. Wait 5-10 seconds\n3. Check email service logs\n4. Check database notifications table\n5. Check your email inbox (if SendGrid configured)\n\n**Expected Results:**\n- Message published to queue\n- Email service consumes message\n- Template rendered\n- Email sent via SendGrid or SMTP\n- Database updated with 'sent' status"
+					},
+					"response": []
+				},
+				{
+					"name": "Complete Push Flow Test",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log('Testing complete push notification flow...');",
+									"console.log('User ID:', pm.environment.get('user_id'));",
+									"console.log('Make sure user has push_token in database!');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{rabbitmq_user}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{rabbitmq_password}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"properties\": {},\n    \"routing_key\": \"push.queue\",\n    \"payload\": \"{\\\"user_id\\\":\\\"{{user_id}}\\\",\\\"template_code\\\":\\\"NEW_MESSAGE\\\",\\\"variables\\\":{\\\"title\\\":\\\"Test Push from Postman\\\",\\\"body\\\":\\\"This is a test push notification\\\",\\\"image\\\":\\\"https://via.placeholder.com/300\\\",\\\"link\\\":\\\"https://example.com\\\",\\\"badge\\\":1},\\\"request_id\\\":\\\"req-postman-{{$timestamp}}\\\",\\\"notification_id\\\":\\\"notif-postman-{{$timestamp}}\\\"}\",\n    \"payload_encoding\": \"string\"\n}"
+						},
+						"url": {
+							"raw": "{{rabbitmq_management_url}}/api/exchanges/%2F/notifications.direct/publish",
+							"host": [
+								"{{rabbitmq_management_url}}"
+							],
+							"path": [
+								"api",
+								"exchanges",
+								"%2F",
+								"notifications.direct",
+								"publish"
+							]
+						},
+						"description": "End-to-end test: Publish push notification and verify it's processed.\n\n**Prerequisites:**\n1. User must have valid push_token in database\n2. FCM server key configured\n3. Template exists (or use simple body text)\n\n**Steps:**\n1. Run this request\n2. Wait 5-10 seconds\n3. Check push service logs\n4. Check database notifications table\n5. Check device for notification\n\n**Expected Results:**\n- Message published to queue\n- Push service consumes message\n- Token validated\n- Template rendered\n- Push sent via FCM\n- Database updated with 'sent' status"
+					},
+					"response": []
+				}
+			],
+			"description": "End-to-end integration tests for complete notification flows."
+		},
+		{
+			"name": "Monitoring & Debugging",
+			"item": [
+				{
+					"name": "All Services Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// This will be run for each service",
+									"pm.test(\"Service is healthy\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{email_service_url}}/health",
+							"host": [
+								"{{email_service_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check health of all services. Run this multiple times changing the URL:\n- Email Service: {{email_service_url}}/health\n- Push Service: {{push_service_url}}/health\n- User Service: {{user_service_url}}/health\n- Template Service: {{template_service_url}}/health"
+					},
+					"response": []
+				},
+				{
+					"name": "Circuit Breaker States",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Circuit breakers info available\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.circuitBreakers).to.exist;",
+									"});",
+									"",
+									"var cb = pm.response.json().data.circuitBreakers;",
+									"console.log('=== Circuit Breaker States ===');",
+									"console.log('Template Service:', cb.templateService.state, '- Failures:', cb.templateService.failureCount);",
+									"console.log('Email/FCM Provider:', cb.emailProvider?.state || cb.fcmProvider?.state);",
+									"console.log('Rate Limiter:', cb.rateLimiter.activeRequests, '/', cb.rateLimiter.maxRequests);",
+									"",
+									"if (cb.templateService.stats) {",
+									"    console.log('\\nTemplate Service Stats:');",
+									"    console.log('  Total Calls:', cb.templateService.stats.totalCalls);",
+									"    console.log('  Successful:', cb.templateService.stats.successfulCalls);",
+									"    console.log('  Failed:', cb.templateService.stats.failedCalls);",
+									"    console.log('  Rejected:', cb.templateService.stats.rejectedCalls);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{email_service_url}}/health",
+							"host": [
+								"{{email_service_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Monitor circuit breaker states and statistics. Change URL to check:\n- Email Service: {{email_service_url}}/health\n- Push Service: {{push_service_url}}/health"
+					},
+					"response": []
+				}
+			],
+			"description": "Monitoring and debugging endpoints for observability."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log('Request:', pm.request.name);",
+					"console.log('URL:', pm.request.url.toString());"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "email_service_url",
+			"value": "http://localhost:3002",
+			"type": "string"
+		},
+		{
+			"key": "push_service_url",
+			"value": "http://localhost:3003",
+			"type": "string"
+		},
+		{
+			"key": "user_service_url",
+			"value": "http://localhost:3001",
+			"type": "string"
+		},
+		{
+			"key": "template_service_url",
+			"value": "http://localhost:3004",
+			"type": "string"
+		},
+		{
+			"key": "rabbitmq_management_url",
+			"value": "http://localhost:15672",
+			"type": "string"
+		},
+		{
+			"key": "rabbitmq_user",
+			"value": "admin",
+			"type": "string"
+		},
+		{
+			"key": "rabbitmq_password",
+			"value": "admin123",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string",
+			"description": "Set this from User Service registration response"
+		},
+		{
+			"key": "template_code",
+			"value": "WELCOME_EMAIL",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string",
+			"description": "Set this from User Service login response"
+		}
+	]
+}

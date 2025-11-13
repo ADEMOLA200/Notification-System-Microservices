@@ -8,17 +8,24 @@ const dbPool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  max: 20,
-  idleTimeoutMillis: 30000,
+  max: 10,
+  idleTimeoutMillis: 20000,
   connectionTimeoutMillis: 10000,
+  keepAlive: true,
+  keepAliveInitialDelayMillis: 10000,
 });
 
-dbPool.on('connect', () => {
+dbPool.on('connect', (client) => {
   logger.info('New database connection established');
 });
 
-dbPool.on('error', (err) => {
-  logger.error('Unexpected database error', { error: err.message });
+dbPool.on('error', (err, client) => {
+  // Ignore connection termination errors from Supabase pooler
+  if (err.message && err.message.includes('termination')) {
+    logger.debug('Database connection closed by server (normal)', { error: err.message });
+  } else {
+    logger.error('Unexpected database error', { error: err.message });
+  }
 });
 
 module.exports = { dbPool };
