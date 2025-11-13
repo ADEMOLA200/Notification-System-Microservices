@@ -42,23 +42,116 @@ async function consumeQueue(queueName, processor) {
     
     channel.consume(queueName, async (msg) => {
       if (msg) {
+        const startTime = Date.now();
+        let content;
+        
         try {
-          const content = JSON.parse(msg.content.toString());
-          logger.info('Processing message from queue', { queue: queueName, content });
+          content = JSON.parse(msg.content.toString());
+        } catch (parseError) {
+          logger.error('Failed to parse message JSON', {
+            error: parseError.message,
+            rawContent: msg.content.toString().substring(0, 200),
+            queue: queueName
+          });
+          // Malformed JSON - send to DLQ immediately
+          channel.ack(msg);
+          return;
+        }
+        
+        try {
+          const retryCount = content.retry_count || 0;
+          
+          logger.info('Processing message from queue', { 
+            queue: queueName, 
+            notificationId: content.notification_id,
+            retryCount,
+            deliveryTag: msg.fields.deliveryTag
+          });
 
+          content.retry_count = retryCount;
           await processor(content);
 
           channel.ack(msg);
-          logger.info('Message processed successfully', { queue: queueName });
-        } catch (error) {
-          logger.error('Failed to process message', { error: error.message, queue: queueName });
           
-          if (msg.fields.redelivered) {
-            await publishToQueue(FAILED_QUEUE, JSON.parse(msg.content.toString()));
+          const processingTime = Date.now() - startTime;
+          logger.info('Message processed successfully', { 
+            queue: queueName,
+            notificationId: content.notification_id,
+            processingTimeMs: processingTime
+          });
+        } catch (error) {
+          const processingTime = Date.now() - startTime;
+          const retryCount = content?.retry_count || 0;
+          const maxRetries = 3;
+          
+          logger.error('Failed to process message', { 
+            error: error.message,
+            stack: error.stack,
+            queue: queueName,
+            notificationId: content?.notification_id,
+            retryCount,
+            maxRetries,
+            processingTimeMs: processingTime,
+            redelivered: msg.fields.redelivered
+          });
+
+          const isPermanentError = error.message.includes('not found') || 
+                                   error.message.includes('Invalid') ||
+                                   error.message.includes('failed_permanent');
+          
+          if (isPermanentError) {
+            logger.warn('Permanent error detected, moving to DLQ', {
+              notificationId: content?.notification_id,
+              error: error.message
+            });
+            
+            const failedMessage = {
+              ...content,
+              error: error.message,
+              failed_at: new Date().toISOString(),
+              final_retry_count: retryCount
+            };
+            
+            await publishToQueue(FAILED_QUEUE, failedMessage);
             channel.ack(msg);
-            logger.info('Message moved to failed queue');
+          } else if (retryCount >= maxRetries) {
+            logger.warn('Max retries exceeded, moving to DLQ', {
+              notificationId: content?.notification_id,
+              retryCount,
+              maxRetries
+            });
+            
+            const failedMessage = {
+              ...content,
+              error: error.message,
+              failed_at: new Date().toISOString(),
+              final_retry_count: retryCount
+            };
+            
+            await publishToQueue(FAILED_QUEUE, failedMessage);
+            channel.ack(msg);
           } else {
-            channel.nack(msg, false, true);
+            logger.info('Requeuing message for retry', {
+              notificationId: content?.notification_id,
+              currentRetry: retryCount,
+              nextRetry: retryCount + 1
+            });
+            
+            content.retry_count = retryCount + 1;
+            
+            const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+            setTimeout(async () => {
+              try {
+                await publishToQueue(queueName, content);
+                channel.ack(msg);
+              } catch (requeueError) {
+                logger.error('Failed to requeue message', {
+                  error: requeueError.message,
+                  notificationId: content?.notification_id
+                });
+                channel.nack(msg, false, false);
+              }
+            }, delay);
           }
         }
       }
@@ -84,8 +177,21 @@ async function publishToQueue(queueName, message) {
   }
 }
 
+async function publishToExchange(exchange, routingKey, message) {
+  try {
+    channel.publish(exchange, routingKey, Buffer.from(JSON.stringify(message)), {
+      persistent: true
+    });
+    logger.info('Message published to exchange', { exchange, routingKey });
+  } catch (error) {
+    logger.error('Failed to publish to exchange', { error: error.message });
+    throw error;
+  }
+}
+
 module.exports = {
   connectRabbitMQ,
   consumeQueue,
-  publishToQueue
+  publishToQueue,
+  publishToExchange
 };

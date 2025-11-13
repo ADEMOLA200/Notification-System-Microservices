@@ -25,6 +25,8 @@ app.use((req, res, next) => {
 app.get('/health', async (req, res) => {
   try {
     const dbCheck = await dbPool.query('SELECT NOW()');
+    const { getCircuitBreakerStats } = require('./services/emailProcessor');
+    const circuitBreakerStats = getCircuitBreakerStats();
     
     res.json({
       success: true,
@@ -32,7 +34,8 @@ app.get('/health', async (req, res) => {
         service: 'email-service',
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        database: dbCheck.rows ? 'connected' : 'disconnected'
+        database: dbCheck.rows ? 'connected' : 'disconnected',
+        circuitBreakers: circuitBreakerStats
       },
       error: null,
       message: 'Service is healthy',

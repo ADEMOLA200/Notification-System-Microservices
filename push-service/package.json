@@ -1,14 +1,14 @@
 {
   "name": "push-service",
   "version": "1.0.0",
-  "description": "Push notification service",
+  "description": "Push notification service with FCM, retry, circuit breaker, and rate limiting",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest --coverage"
   },
-  "keywords": ["microservice", "push", "notification"],
+  "keywords": ["microservice", "push", "notification", "fcm", "firebase"],
   "author": "",
   "license": "MIT",
   "dependencies": {
